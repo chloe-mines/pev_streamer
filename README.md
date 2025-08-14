@@ -44,6 +44,10 @@ pipx install playwright
 playwright install
 ```
 
+OR....
+
+just run the install.sh script ;-)
+
 ## Using the System
 
 ### Step 1: Do you want to include **Live Lap Monitor Times**?
