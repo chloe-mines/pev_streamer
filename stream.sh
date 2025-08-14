@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # RTMP configuration
-RSTP_IP="170.64.252.7"
+RSTP_IP="xxx.xxx.xxx.xxx"
 RSTP_Port="1935"
 RSTP_Target="live/cam0_overlay"
 
