@@ -29,6 +29,14 @@ lap_times_by_device = {}      # deviceId -> [lap_ms, ...]
 lap_counts_by_device = {}     # deviceId -> count of completed laps
 best_lap_by_device = {}       # deviceId -> best (min) lap time in ms
 
+# Rider name mapping
+#Examples below
+RIDER_NAMES = {
+    22: "Luke",
+    33: "Anakin", 
+    79: "Ventress"
+}
+
 def format_ms(ms: Optional[int]) -> str:
     if ms is None:
         return "—"
@@ -55,7 +63,9 @@ def write_summary_file():
         laps = lap_counts_by_device.get(dev, 0)
         best_ms = best_lap_by_device.get(dev)
         best_str = _format_secs_from_ms(best_ms)
-        lines.append(f"Device {dev}: {laps} laps Best: {best_str}")
+        # Use rider name if known, otherwise use "Device X"
+        display_name = RIDER_NAMES.get(dev, f"Device {dev}")
+        lines.append(f"{display_name}: {laps} laps Best: {best_str}")
     # Ensure directory exists (it will for /tmp), then atomic replace
     with open(tmp_path, "w") as f:
         f.write("\n".join(lines) + ("\n" if lines else ""))
@@ -111,13 +121,20 @@ def handle_event(raw_bytes: bytes):
     # 1) JSON line
     #print(json.dumps(out, separators=(",", ":")), flush=True)
     # 2) Human-readable
-    print(
-        f"Device {dev} | Lap {parsed['lapNumber']} | "
+    display_name = RIDER_NAMES.get(dev, f"Device {dev}")
+    human_readable = (
+        f"{display_name} | Lap {parsed['lapNumber']} | "
         f"Lap Time {format_ms(lap_ms)} | "
         f"CumulativeField {parsed['cumulativeSeconds']}s | "
-        f"Avg Lap {format_ms(avg_lap_ms)}",
-        flush=True
+        f"Avg Lap {format_ms(avg_lap_ms)}"
     )
+    print(human_readable, flush=True)
+    
+    # 3) Append to laplogs.txt with timestamp
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    log_path = os.path.join(script_dir, "laplogs.txt")
+    with open(log_path, "a") as f:
+        f.write(f"{wall_ts} {human_readable}\n")
 
 def notify_cb(_, data: bytearray):
     try:
@@ -136,7 +153,8 @@ async def main():
                     async with BleakClient(dev, timeout=10.0) as client:
                         await client.connect()
                         print("Connected; hijacking lapmonitor...", flush=True)
-                        services = await client.get_services()
+                        #services = await client.get_services()
+                        services = client.services 
                         tx_char = None
                         for service in services:
                             for char in service.characteristics:
