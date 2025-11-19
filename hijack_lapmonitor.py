@@ -29,12 +29,14 @@ lap_times_by_device = {}      # deviceId -> [lap_ms, ...]
 lap_counts_by_device = {}     # deviceId -> count of completed laps
 best_lap_by_device = {}       # deviceId -> best (min) lap time in ms
 
-# Rider name mapping
+# Rider name mapping: optional only - you can do this for local display in the logs
 #Examples below
 RIDER_NAMES = {
-    22: "Luke",
-    33: "Anakin", 
-    79: "Ventress"
+    70: "Lisa",
+    15: "Bart",
+    7: "Marge",
+    75: "Homer",
+    32: "Maggie"
 }
 
 def format_ms(ms: Optional[int]) -> str:
@@ -130,11 +132,18 @@ def handle_event(raw_bytes: bytes):
     )
     print(human_readable, flush=True)
     
-    # 3) Append to laplogs.txt with timestamp
+    # 3) Append to laplogs.txt with timestamp (using device ID format)
+    device_name_for_log = f"Device {dev}"
+    log_readable = (
+        f"{device_name_for_log} | Lap {parsed['lapNumber']} | "
+        f"Lap Time {format_ms(lap_ms)} | "
+        f"CumulativeField {parsed['cumulativeSeconds']}s | "
+        f"Avg Lap {format_ms(avg_lap_ms)}"
+    )
     script_dir = os.path.dirname(os.path.abspath(__file__))
     log_path = os.path.join(script_dir, "laplogs.txt")
     with open(log_path, "a") as f:
-        f.write(f"{wall_ts} {human_readable}\n")
+        f.write(f"{wall_ts} {log_readable}\n")
 
 def notify_cb(_, data: bytearray):
     try:
